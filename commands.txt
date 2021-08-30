@@ -1,0 +1,8 @@
+ref
+ref = await SafeMoon.deployed()
+
+rate
+rate = (await ref._getRate()).toString() 
+
+rTotal
+num = (await ref.getRtotal()).toString()
