@@ -234,8 +234,8 @@ interface IERC20 {
 contract SafeMoon is IERC20{
     using SafeMath for uint256;
 
-    mapping (address => uint256) private _rOwned;
-    mapping (address => uint256) private _tOwned;
+    mapping (address => uint256) private _rOwned;//the balance of an address in r-space
+    mapping (address => uint256) private _tOwned;//the balance of an address in t-space
     mapping (address => mapping (address => uint256)) private _allowances;
 
     mapping (address => bool) private _isExcludedFromFee;
@@ -253,7 +253,7 @@ contract SafeMoon is IERC20{
     uint256 public _taxFee = 5;
 
     constructor() {
-        _rOwned[msg.sender] = _rTotal;
+        _rOwned[msg.sender] = _rTotal; //100k
         emit Transfer(address(0), msg.sender, _tTotal);
     }
 
@@ -264,13 +264,12 @@ contract SafeMoon is IERC20{
     function tokenFromReflection(uint256 rAmount) public view returns(uint256) {
         require(rAmount <= _rTotal, "Amount must be less than total reflections");
         uint256 currentRate =  _getRate(); //99
-        //we go to t space 
-        return rAmount.div(currentRate);//90k div  99 = 909 (with one decimal) --> 90,9
-                                        //9500 div  99 = 95,9 (with one decimal) --> 9,5 
+        //we go to t space 10
+        return rAmount.div(currentRate); //currentRate is getting lower the holder balance is bigger
     }
 
     function getRtotal() external view returns(uint256){
-        return _rTotal;
+        return _rTotal; //100k = rTotal
     }
 
     function transfer(address recipient, uint256 amount) public override returns (bool) {
@@ -283,13 +282,13 @@ contract SafeMoon is IERC20{
     }
 
     function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256) {
-        (uint256 tTransferAmount, uint256 tFee) = _getTValues(tAmount); // 95,5
+        (uint256 tTransferAmount, uint256 tFee) = _getTValues(tAmount); //tTransferAmount=95, tFee=5
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, _getRate());
         return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee);
     }
 
     function _getTValues(uint256 tAmount) private view returns (uint256, uint256) {
-        uint256 tFee = calculateTaxFee(tAmount);  //5 
+        uint256 tFee = calculateTaxFee(tAmount);  // 5
         uint256 tTransferAmount = tAmount.sub(tFee); //100 - 5 = 95
         return (tTransferAmount, tFee);
     }
@@ -304,13 +303,13 @@ contract SafeMoon is IERC20{
     }
 
     function _getRate() public view returns(uint256) {
-        //RTOTAL/TTOTAL 99500 / 1000 = 99
-        return _rTotal.div(_tTotal); 
+        //RTOTAL/TTOTAL 100k / 1000 = 100
+        return _rTotal.div(_tTotal); //---> this value is getting lower
     }
 
 
     function calculateTaxFee(uint256 _amount) private view returns (uint256) {
-        return _amount.mul(_taxFee).div(
+        return _amount.mul(_taxFee).div( //100 * 5 / 100 = 500 / 100 = 5
             10**2
         );
     }
@@ -329,7 +328,7 @@ contract SafeMoon is IERC20{
         //because in the balance function we go to T space, so if you do 1 transaction and call the balance
         //it will reflect the 5% of fee
         _rOwned[from] = _rOwned[from].sub(rAmount); //100k - 10k = 90K
-        _rOwned[to] = _rOwned[to].add(rTransferAmount); //0 + 950
+        _rOwned[to] = _rOwned[to].add(rTransferAmount); //0 + 9500
         _reflectFee(rFee);// _rTotal = _rTotal.sub(rFee); 100k - 500 = 99.5K -> new rate
         emit Transfer(from, to, tTransferAmount);
     }
